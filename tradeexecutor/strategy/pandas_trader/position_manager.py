@@ -897,7 +897,13 @@ class PositionManager:
 
         reserve_asset, reserve_price = self.state.portfolio.get_default_reserve_asset()
 
-        slippage_tolerance = slippage_tolerance or self.default_slippage_tolerance
+        if slippage_tolerance is not None:
+            trade_slippage_tolerance = slippage_tolerance
+        elif position.slippage_tolerance is not None:
+            trade_slippage_tolerance = position.slippage_tolerance
+        else:
+            trade_slippage_tolerance = self.default_slippage_tolerance
+
 
         if dollar_delta > 0:
             # Buy
@@ -913,7 +919,7 @@ class PositionManager:
                 planned_mid_price=price_structure.mid_price,
                 lp_fees_estimated=price_structure.get_total_lp_fees(),
                 pair_fee=price_structure.get_fee_percentage(),
-                slippage_tolerance=slippage_tolerance,
+                slippage_tolerance=trade_slippage_tolerance,
                 notes=notes,
                 pending=pending,
                 position=position,
@@ -1012,8 +1018,6 @@ class PositionManager:
             price = trigger_price
 
         reserve_asset, reserve_price = self.state.portfolio.get_default_reserve_asset()
-
-        slippage_tolerance = slippage_tolerance or self.default_slippage_tolerance
 
         logger.info(
             "Preparing to close position %s, quantity %s, pricing %s, profit %s, slippage tolerance: %f %%",
@@ -1185,11 +1189,18 @@ class PositionManager:
             if trade_type is None:
                 trade_type = TradeType.rebalance
 
+            if slippage_tolerance is not None:
+                trade_slippage_tolerance = slippage_tolerance
+            elif position.slippage_tolerance is not None:
+                trade_slippage_tolerance = position.slippage_tolerance
+            else:
+                trade_slippage_tolerance = self.default_slippage_tolerance
+
             return self.close_spot_position(
                 position,
                 trade_type,
                 notes,
-                slippage_tolerance,
+                slippage_tolerance=trade_slippage_tolerance,
                 flags=flags,
                 pending=pending,
                 trigger_price=trigger_price,
